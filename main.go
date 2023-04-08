@@ -4,12 +4,21 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+
+	"github.com/shadiestgoat/log"
 )
 
 var TWITCH_ID = ""
 
 func main() {
 	InitConfig()
+
+	logCB := []log.LogCB{log.NewLoggerFile("log"), log.NewLoggerPrint()}
+	if DEBUG_WEBHOOK != "" {
+		logCB = append(logCB, log.NewLoggerDiscordWebhook(DEBUG_PREFIX, DEBUG_WEBHOOK))
+	}
+	log.Init(logCB...)
+
 	TWITCH_ID = GetOwnID()
 	var tokenResp *struct {
 		Token string `json:"token"`
@@ -19,7 +28,8 @@ func main() {
 		panic("Couldn't fetch discord token :(")
 	}
 	DISCORD_TOKEN = tokenResp.Token
-	go InitDonation()
+	
+	go InitDonations()
 
 	fmt.Printf("Twitch ID %s\n", TWITCH_ID)
 	

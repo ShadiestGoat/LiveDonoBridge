@@ -12,3 +12,16 @@ func GetOwnID() string {
 
 	return resp.ID
 }
+
+type SETip struct {
+	User     *SEUser `json:"user"`
+	Provider string  `json:"provider"`
+	Message  string  `json:"message"`
+	Amount   float64 `json:"amount"`
+	Currency string  `json:"currency"`
+	Imported bool    `json:"imported"`
+}
+
+type SEUser struct {
+	Name string `json:"username"`
+}

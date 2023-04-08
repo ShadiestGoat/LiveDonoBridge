@@ -6,6 +6,8 @@ import (
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/shadiestgoat/log"
 )
 
 func Fetch(method, url string, body, resp any, headers http.Header, attempt int, maxAttempts int) {
@@ -32,8 +34,7 @@ func Fetch(method, url string, body, resp any, headers http.Header, attempt int,
 					body = string(tmp)
 				}
 			}
-			PrintErr("Couldn't %s '%s': err: %v, status: %d, body: '%s'", method, url, err, status, body)
-			panic("")
+			log.Fatal("Couldn't %s '%s': err: %v, status: %d, body: '%s'", method, url, err, status, body)
 		}
 		time.Sleep(7 * time.Second)
 		Fetch(method, url, body, resp, headers, attempt + 1, maxAttempts)

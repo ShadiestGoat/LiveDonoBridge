@@ -1,165 +1,65 @@
 package main
 
 import (
-	"encoding/json"
-	"errors"
-	"fmt"
-	"io"
-	"net"
-	"net/http"
 	"time"
 
-	"github.com/gorilla/websocket"
+	"github.com/shadiestgoat/donation-api-wrapper"
+	"github.com/shadiestgoat/log"
 )
-
-type DonEventType int
-
-const (
-	DET_NONE DonEventType = iota
-	DET_NEW_DON
-	DET_NEW_FUND
-	DET_PING
-)
-
-type Donation struct {
-	ID        string  `json:"id"`
-	OrderID   string  `json:"ppOrderID"`
-	CaptureID string  `json:"ppCaptureID"`
-	Donor     string  `json:"donor"`
-	Message   string  `json:"message"`
-	Amount    float64 `json:"amount"`
-	FundID    string  `json:"fundID"`
-}
-
-type DonEvent struct {
-	Type DonEventType    `json:"event"`
-	Body json.RawMessage `json:"body"`
-}
 
 func DonationsRestart() {
 	time.Sleep(30 * time.Second)
-	InitDonation()
+	InitDonations()
 }
 
-type DonDonor struct {
-	ID        string `json:"id"`
-	DiscordID string `json:"discordID"`
-	PayPal    string `json:"PayPal"`
-	CycleDay  int    `json:"payCycle"`
-}
-
-type DonProfileResponse struct {
-	Donors []*DonDonor `json:"donors"`
-}
-
-func DonorID(userID string, resolve bool) *DonProfileResponse {
-	q := ""
-	if resolve {
-		q = "?resolve=true"
-	}
-	resp := &DonProfileResponse{}
-	DonFetch(http.MethodGet, "/donors/donor/"+userID+q, nil, resp)
-
-	return resp
-}
-
-func InitDonation() {
-	headers := http.Header{
-		"Authorization": []string{DONATION_TOKEN},
-	}
-	conn, resp, err := websocket.DefaultDialer.Dial(fmt.Sprintf(`wss://%s/api/ws`, DONATION_HOST), headers)
-
-	if err != nil || conn == nil || resp.StatusCode != 101 {
-		body := ""
-		if resp != nil && resp.Body != nil {
-			b, _ := io.ReadAll(resp.Body)
-			body = string(b)
+func InitDonations() {
+	c := donations.NewClient(DONATION_TOKEN, donations.WithCustomLocation(DONATION_HOST))
+	log.Debug("Opening a new WS conn...")
+	
+	c.AddHandler(func (c *donations.Client, e *donations.EventClose)  {
+		if e.Err != nil {
+			log.Error("Closed connection with error: %v", e.Err)
+		} else {
+			log.Error("Closed connection with no error??")
 		}
-		status := 0
-		if resp != nil {
-			status = resp.StatusCode
-		}
-		PrintErr("Couldn't connect to the donation api: '%v', '%v', '%v'", err, status, body)
+
 		go DonationsRestart()
-
-		return
-	}
-
-	conn.SetPingHandler(func(appData string) error {
-		err = conn.WriteControl(websocket.PongMessage, []byte{}, time.Time{})
-		return err
 	})
 
-	for {
-		_, message, err := conn.ReadMessage()
-		if err != nil {
-			if errors.Is(err, net.ErrClosed) {
-				PrintErr("The Donation WS Connection was closed! Restarting in 20s...")
-			} else {
-				PrintErr("Unknown Don WS error: %v", err)
-			}
-			conn.Close()
-			conn = nil
-			go DonationsRestart()
+	c.AddHandler(func (c *donations.Client, e *donations.EventNewDonation)  {
+		donor, err := c.DonorByID(e.Donor, false)
+		if log.ErrorIfErr(err, "fetching donor by id") {
 			return
 		}
-		evRaw := DonEvent{}
 
-		if json.Unmarshal(message, &evRaw) != nil {
-			PrintErr("Couldn't parse WS Donation: '%v'", string(message))
-			continue
-		}
+		name := "Someone"
 
-		switch evRaw.Type {
-		case DET_NEW_DON:
-			donation := &Donation{}
+		for _, d := range donor.Donors {
+			discordID := d.DiscordID
 
-			err := json.Unmarshal(evRaw.Body, donation)
-			if err != nil {
-				PrintErr("Bad donation parse! '%v'", string(evRaw.Body))
-				continue
-			}
-
-			donor := DonorID(donation.Donor, false)
-
-			name := "Someone"
-
-			if len(donor.Donors) >= 1 {
-				discordID := donor.Donors[0].DiscordID
-				if discordID != "anon" {
-					var resp *struct {
-						Name string `json:"username"`
-					}
-					DiscordFetch("GET", `/users/`+discordID, nil, &resp)
-					if resp != nil {
-						name = resp.Name
-					}
+			if discordID != "anon" && discordID != "" {
+				var resp *struct {
+					Name string `json:"username"`
+				}
+				DiscordFetch("GET", `/users/`+discordID, nil, &resp)
+				if resp != nil {
+					name = resp.Name
+					break
 				}
 			}
-
-			SEFetch(`POST`, `/tips/`+TWITCH_ID, struct {
-				User struct {
-					Name string `json:"username"`
-				} `json:"user"`
-				Provider string  `json:"provider"`
-				Message  string  `json:"message"`
-				Amount   float64 `json:"amount"`
-				Currency string  `json:"currency"`
-				Imported bool    `json:"imported"`
-			}{
-				User: struct {
-					Name string `json:"username"`
-				}{
-					Name: name,
-				},
-				Provider: "donate.shadygoat.eu",
-				Message:  donation.Message,
-				Amount:   donation.Amount,
-				Currency: "EUR",
-				Imported: true,
-			}, nil, 10)
-		case DET_PING:
-			conn.WriteMessage(1, []byte{'P'})
 		}
-	}
+
+		SEFetch(`POST`, `/tips/`+TWITCH_ID, &SETip{
+			User: &SEUser{
+				Name: name,
+			},
+			Provider: "donate.shadygoat.eu",
+			Message:  e.Message,
+			Amount:   e.Amount,
+			Currency: "EUR",
+			Imported: true,
+		}, nil, 10)
+	})
+
+	c.OpenWS()
 }
