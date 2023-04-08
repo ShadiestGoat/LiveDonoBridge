@@ -15,7 +15,7 @@ func DonationsRestart() {
 func InitDonations() {
 	c := donations.NewClient(DONATION_TOKEN, donations.WithCustomLocation(DONATION_HOST))
 	log.Debug("Opening a new WS conn...")
-	
+
 	c.AddHandler(func (c *donations.Client, e *donations.EventClose)  {
 		if e.Err != nil {
 			log.Error("Closed connection with error: %v", e.Err)
@@ -24,6 +24,10 @@ func InitDonations() {
 		}
 
 		go DonationsRestart()
+	})
+
+	c.AddHandler(func (c *donations.Client, e *donations.EventOpen)  {
+		log.Success("Connected!")
 	})
 
 	c.AddHandler(func (c *donations.Client, e *donations.EventNewDonation)  {
