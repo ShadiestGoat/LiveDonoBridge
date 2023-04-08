@@ -19,7 +19,7 @@ func InitDonations() {
 		}
 
 		time.Sleep(30 * time.Second)
-		c.OpenWS()
+		log.FatalIfErr(c.OpenWS(), "opening WS")
 	})
 
 	c.AddHandler(func (c *donations.Client, e *donations.EventOpen)  {
@@ -61,5 +61,5 @@ func InitDonations() {
 		}, nil, 10)
 	})
 
-	c.OpenWS()
+	log.FatalIfErr(c.OpenWS(), "opening WS")
 }
