@@ -7,11 +7,6 @@ import (
 	"github.com/shadiestgoat/log"
 )
 
-func DonationsRestart() {
-	time.Sleep(30 * time.Second)
-	InitDonations()
-}
-
 func InitDonations() {
 	c := donations.NewClient(DONATION_TOKEN, donations.WithCustomLocation(DONATION_HOST))
 	log.Debug("Opening a new WS conn...")
@@ -23,7 +18,8 @@ func InitDonations() {
 			log.Error("Closed connection with no error??")
 		}
 
-		go DonationsRestart()
+		time.Sleep(30 * time.Second)
+		c.OpenWS()
 	})
 
 	c.AddHandler(func (c *donations.Client, e *donations.EventOpen)  {
