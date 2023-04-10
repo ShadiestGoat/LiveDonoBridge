@@ -18,6 +18,7 @@ func main() {
 		logCB = append(logCB, log.NewLoggerDiscordWebhook(DEBUG_PREFIX, DEBUG_WEBHOOK))
 	}
 	log.Init(logCB...)
+	log.Warn("This is a test run - any future warnings or errors will appear like this!")
 
 	TWITCH_ID = GetOwnID()
 	var tokenResp *struct {
