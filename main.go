@@ -29,13 +29,13 @@ func main() {
 		panic("Couldn't fetch discord token :(")
 	}
 	DISCORD_TOKEN = tokenResp.Token
-	
+
 	go InitDonations()
 
 	fmt.Printf("Twitch ID %s\n", TWITCH_ID)
-	
+
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
 
-	<- stop
+	<-stop
 }

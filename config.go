@@ -15,12 +15,12 @@ type confItem struct {
 
 var (
 	STREAM_ELEMENTS_JWT = ""
-	DONATION_TOKEN = ""
-	DONATION_HOST = ""
-	DISCORD_TOKEN = ""
+	DONATION_TOKEN      = ""
+	DONATION_HOST       = ""
+	DISCORD_TOKEN       = ""
 
 	DEBUG_WEBHOOK = ""
-	DEBUG_PREFIX = ""
+	DEBUG_PREFIX  = ""
 )
 
 func InitConfig() {
@@ -32,7 +32,7 @@ func InitConfig() {
 			Required: true,
 		},
 		"DONATION_TOKEN": {
-			Res:     &DONATION_TOKEN,
+			Res:      &DONATION_TOKEN,
 			Required: true,
 		},
 		"DONATION_HOST": {

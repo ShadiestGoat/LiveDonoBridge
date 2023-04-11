@@ -11,7 +11,7 @@ func InitDonations() {
 	c := donations.NewClient(DONATION_TOKEN, donations.WithCustomLocation(DONATION_HOST))
 	log.Debug("Opening a new WS conn...")
 
-	c.AddHandler(func (c *donations.Client, e *donations.EventClose)  {
+	c.AddHandler(func(c *donations.Client, e *donations.EventClose) {
 		if e.Err != nil {
 			log.Error("Closed connection with error: %v", e.Err)
 		} else {
@@ -22,11 +22,11 @@ func InitDonations() {
 		log.FatalIfErr(c.OpenWS(), "opening WS")
 	})
 
-	c.AddHandler(func (c *donations.Client, e *donations.EventOpen)  {
+	c.AddHandler(func(c *donations.Client, e *donations.EventOpen) {
 		log.Success("Connected!")
 	})
 
-	c.AddHandler(func (c *donations.Client, e *donations.EventNewDonation)  {
+	c.AddHandler(func(c *donations.Client, e *donations.EventNewDonation) {
 		donor, err := c.DonorByID(e.Donor, false)
 		if log.ErrorIfErr(err, "fetching donor by id") {
 			return

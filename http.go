@@ -37,7 +37,7 @@ func Fetch(method, url string, body, resp any, headers http.Header, attempt int,
 			log.Fatal("Couldn't %s '%s': err: %v, status: %d, body: '%s'", method, url, err, status, body)
 		}
 		time.Sleep(7 * time.Second)
-		Fetch(method, url, body, resp, headers, attempt + 1, maxAttempts)
+		Fetch(method, url, body, resp, headers, attempt+1, maxAttempts)
 		return
 	}
 	if resp != nil {
@@ -48,17 +48,17 @@ func Fetch(method, url string, body, resp any, headers http.Header, attempt int,
 func DonFetch(method, path string, body any, resp any) {
 	headers := http.Header{}
 	headers.Set("Authorization", DONATION_TOKEN)
-	Fetch(method, "https://" + DONATION_HOST + "/api" + path, body, resp, headers, 1, 1)
+	Fetch(method, "https://"+DONATION_HOST+"/api"+path, body, resp, headers, 1, 1)
 }
 
 func DiscordFetch(method, path string, body any, resp any) {
 	headers := http.Header{}
-	headers.Set("Authorization", "Bot " + DISCORD_TOKEN)
-	Fetch(method, "https://discord.com/api/v10" + path, body, resp, headers, 1, 1)
+	headers.Set("Authorization", "Bot "+DISCORD_TOKEN)
+	Fetch(method, "https://discord.com/api/v10"+path, body, resp, headers, 1, 1)
 }
 
 func SEFetch(method string, path string, body any, respJson any, max int) {
 	headers := http.Header{}
-	headers.Set("Authorization", "Bearer " + STREAM_ELEMENTS_JWT)
-	Fetch(method, "https://api.streamelements.com/kappa/v2" + path, body, respJson, headers, 1, 1)
+	headers.Set("Authorization", "Bearer "+STREAM_ELEMENTS_JWT)
+	Fetch(method, "https://api.streamelements.com/kappa/v2"+path, body, respJson, headers, 1, 1)
 }
